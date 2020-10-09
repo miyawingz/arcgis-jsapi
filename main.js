@@ -1,11 +1,13 @@
 require([
   "esri/Map",
   "esri/views/MapView",
-  'esri/layers/CSVLayer'
+  'esri/layers/CSVLayer',
+  'esri/widgets/Expand'
 ], function (
   Map,
   MapView,
-  CSVLayer
+  CSVLayer,
+  Expand
 ) {
 
   const clusterConfig = {
@@ -104,7 +106,7 @@ require([
   const pcroSpend = new CSVLayer({
     url: "http://old.c2rem.com/test/assets/PCROSpend.csv",
     title: "PCRO Project Spend",
-    outFields: ["Name", "SiteID", "LobSub", "Cost30Yr"],
+    outFields: ["Name", "SiteID", "LobSub", "Cost30Yr", "State"],
     popupTemplate: {
       title: "{Name}",
       content: [
@@ -126,6 +128,9 @@ require([
                 places: 0,
                 digitSeparator: true
               }
+            },
+            {
+              fieldName: "State"
             }
           ]
         }
@@ -145,6 +150,17 @@ require([
     center: [-118, 34],
     zoom: 11
   });
+
+  const widgetDiv = document.getElementById("widgetDiv");
+  view.ui.add(
+    new Expand({
+      view: view,
+      content: widgetDiv,
+      expandIconClass: 'esri-icno-layer-list',
+      expanded: true
+    }),
+    "top-right"
+  )
 
   pcroSpend
     .when()
@@ -181,6 +197,42 @@ require([
       ]
 
       pcroSpend.renderer = renderer
+    })
+
+  view
+    .whenLayerView(pcroSpend)
+    .then(function (layerView) {
+      const filterspend = document.getElementById('filterSpend')
+      filterspend.addEventListener("change", function (event) {
+        const newValue = event.target.value;
+        const whereClause = newValue ?
+          `Cost30Yr >=  ${newValue}`
+          : null;
+
+        layerView.filter = {
+          where: whereClause
+        };
+        view.popup.close()
+      })
+
+      const filterFac = document.getElementById('filterFac')
+      filterFac.addEventListener("change", function (event) {
+        const newValue = event.target.value;
+        const whereClause = newValue ?
+          "LobSub ='PCRO " + newValue + "'"
+          : null;
+
+        layerView.filter = {
+          where: whereClause
+        };
+        view.popup.close()
+      })
+
+
+
+    })
+    .catch(err => {
+      console.error(err)
     })
 
 }
