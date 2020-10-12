@@ -2,12 +2,14 @@ require([
   "esri/Map",
   "esri/views/MapView",
   'esri/layers/CSVLayer',
-  'esri/widgets/Expand'
+  'esri/widgets/Expand',
+  'esri/widgets/Legend'
 ], function (
   Map,
   MapView,
   CSVLayer,
-  Expand
+  Expand,
+  Legend
 ) {
 
   const clusterConfig = {
@@ -17,8 +19,6 @@ require([
         {
           type: "text",
           text:
-            // "This cluster represents <b>{cluster_count}</b> PCRO Site with an average spend of <b>${cluster_avg_Cost30Yr}</b>.<br><br>" +
-            // "The PCRO Sites in this cluster has total of <b>${expression/total-cost}</b> spend over a 30-year period."
             "This cluster represents <b>{cluster_count}</b> PCRO Site with a total spend of <b>${expression/total-cost}</b> over a 30-year period."
         }
       ],
@@ -69,6 +69,7 @@ require([
           }
         },
         labelPlacement: "center-center",
+        deconflictionStrategy: "none",
         labelExpressionInfo: {
           expression: `
           var count = Text($feature.cluster_count, '#,### Sites')
@@ -102,11 +103,63 @@ require([
     ]
   };
 
+  const rendererUnique = {
+    type: "unique-value",
+    field: "LobSub",
+    defaultSymbol: {
+      type: "simple-marker",
+      size: 4,
+      color: "white"
+    },
+    uniqueValueInfos: [
+      {
+        value: "PCRO Retail",
+        symbol: {
+          type: "simple-marker",
+          color: "green",
+          size: 4
+        }
+      },
+      {
+        value: "PCRO Chemicals",
+        symbol: {
+          type: "simple-marker",
+          color: "yellow",
+          size: 4
+        }
+      },
+      {
+        value: "PCRO Manufacturing Refining",
+        symbol: {
+          type: "simple-marker",
+          color: "red",
+          size: 4
+        }
+      },
+      {
+        value: "PCRO Lubricants",
+        symbol: {
+          type: "simple-marker",
+          color: "blue",
+          size: 4
+        }
+      },
+      {
+        value: "PCRO Distribution Pipeline",
+        symbol: {
+          type: "simple-marker",
+          color: "orange",
+          size: 4
+        }
+      },
+    ]
+  };
 
   const pcroSpend = new CSVLayer({
     url: "http://old.c2rem.com/test/assets/PCROSpend.csv",
     title: "PCRO Project Spend",
-    outFields: ["Name", "SiteID", "LobSub", "Cost30Yr", "State"],
+    // outFields: ["Name", "SiteID", "Phase", "MultiP", "GeoCode", "PlanetNo", "GSAPID", "SGWPM", "LobSub", "Cost30Yr", "Country", "State"],
+    outFields: ["Name", "SiteID", "Phase", "PlanetNo", "SGWPM", "MultiP", "GeoCode", "LobSub", "Cost30Yr", "Country", "State", "GSAPID"],
     popupTemplate: {
       title: "{Name}",
       content: [
@@ -118,8 +171,36 @@ require([
               label: "Site ID"
             },
             {
+              fieldName: "Phase"
+            },
+            {
               fieldName: "LobSub",
               label: "Business Unit & Facility Type"
+            },
+            {
+              fieldName: "PlanetNo",
+              label: "Planet No."
+            },
+            {
+              fieldName: "GSAPID",
+            },
+            {
+              fieldName: "SGWPM",
+              label: "SGW PM"
+            },
+            {
+              fieldName: "MultiP",
+              label: "Multiple Party"
+            },
+            {
+              fieldName: "GeoCode",
+              label: "LatLong"
+            },
+            {
+              fieldName: "Country",
+            },
+            {
+              fieldName: "State",
             },
             {
               fieldName: "Cost30Yr",
@@ -128,75 +209,53 @@ require([
                 places: 0,
                 digitSeparator: true
               }
-            },
-            {
-              fieldName: "State"
             }
           ]
         }
       ]
-    },
-    featureReduction: clusterConfig
+    }
   });
 
   const map = new Map({
-    basemap: "topo",
+    basemap: "streets-vector",
     layers: [pcroSpend]
   });
+
 
   const view = new MapView({
     container: "webmap",
     map: map,
     center: [-118, 34],
-    zoom: 11
+    zoom: 3
   });
+
+  const legend = new Legend({
+    view: view,
+    container: "legendDiv",
+    layerInfos: [{
+      layer: pcroSpend,
+      title: "Business Unit & Facility"
+    }]
+  })
 
   const widgetDiv = document.getElementById("widgetDiv");
   view.ui.add(
     new Expand({
       view: view,
       content: widgetDiv,
-      expandIconClass: 'esri-icno-layer-list',
-      expanded: true
+      expandIconClass: 'esri-icon-layer-list',
+      expanded: false
     }),
     "top-right"
   )
 
+
+
+
   pcroSpend
     .when()
     .then(function () {
-
-      const renderer = pcroSpend.renderer.clone()
-      renderer.visualVariables = [
-        {
-          type: "color",
-          field: "Cost30Yr",
-          stops: [{
-            value: 1,
-            color: "orange"
-          }
-          ]
-          // // normalizationField: "expression/total-cost",
-          // stops: [
-          //   {
-          //     value: 100000000, // features where < 10% of the pop in poverty
-          //     color: "#FFFCD4", // will be assiged this color (beige)
-          //     label: "10% or lower" // label to display in the legend
-          //   },
-          //   {
-          //     value: 1000000000, // features where > 30% of the pop in poverty
-          //     color: "#350242", // will be assigned this color (purple)
-          //     label: "50% or higher" // label to display in the legend
-          //   }
-          // ]
-          // minSize: "16px",
-          // maxSize: "50px",
-          // minDataValue: 100000,
-          // maxDataValue: 5000000
-        }
-      ]
-
-      pcroSpend.renderer = renderer
+      renderVisualCluster();
     })
 
   view
@@ -228,12 +287,69 @@ require([
         view.popup.close()
       })
 
+      const filterCountry = document.getElementById('filterCountry')
+      filterCountry.addEventListener("change", event => {
+        const newValue = event.target.value;
+        const whereClause = newValue ?
+          "Country = '" + newValue + "'"
+          : null;
 
+        layerView.filter = {
+          where: whereClause
+        }
+
+        view.popup.close()
+      })
+
+
+      const filterState = document.getElementById('filterState');
+      filterState.addEventListener("change", event => {
+        const newValue = event.target.value;
+        const whereClause = newValue ?
+          "State = '" + newValue + "'"
+          : null;
+
+        layerView.filter = {
+          where: whereClause
+        }
+
+        view.popup.close()
+      })
+
+      const toggleBtn = document.getElementById('clusterBtn');
+      toggleBtn.addEventListener("click", () => {
+        let fr = pcroSpend.featureReduction;
+        if (!fr) {
+          renderVisualCluster()
+        } else {
+          pcroSpend.featureReduction = null;
+          pcroSpend.legendEnabled = true;
+          pcroSpend.renderer = rendererUnique
+        }
+        toggleBtn.innerText === "Enable Cluster" ? "Disable Cluster" : "Enable Cluster"
+      })
 
     })
     .catch(err => {
       console.error(err)
     })
 
-}
-);
+  function renderVisualCluster() {
+    pcroSpend.featureReduction = clusterConfig;
+    pcroSpend.legendEnabled = false;
+    const renderer = pcroSpend.renderer.clone()
+    renderer.visualVariables = [
+      {
+        type: "color",
+        field: "Cost30Yr",
+        stops: [{
+          value: 1,
+          color: "orange"
+        }]
+      }
+    ]
+
+    pcroSpend.renderer = renderer
+  }
+
+});

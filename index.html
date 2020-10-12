@@ -34,6 +34,18 @@
             <option value='Lubricants'>Lubricants</option>
             <option value='Retail'>Retail</option>
         </select>
+        <span>Filter by Country</span>
+        <select id="filterCountry" class="esri-select">
+            <option value=''>All</option>
+            <option value='US'>U.S.</option>
+        </select>
+        <span>Filter by State</span>
+        <select class="esri-select" id="filterState">
+            <option value=''>All</option>
+            <option value="CALIFORNIA">CA</option>
+        </select>
+        <buttion id="clusterBtn" class="esri-button">Disable Cluster</buttion>
+        <div id="legendDiv"></div>
     </div>
 
     <link rel="stylesheet" href="https://js.arcgis.com/4.17/esri/css/main.css">
