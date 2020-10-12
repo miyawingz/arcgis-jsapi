@@ -237,7 +237,7 @@ require([
       title: "Business Unit & Facility"
     }]
   })
-
+  
   const widgetDiv = document.getElementById("widgetDiv");
   view.ui.add(
     new Expand({
@@ -326,7 +326,10 @@ require([
           pcroSpend.legendEnabled = true;
           pcroSpend.renderer = rendererUnique
         }
-        toggleBtn.innerText === "Enable Cluster" ? "Disable Cluster" : "Enable Cluster"
+
+        toggleBtn.innerText === "Enable Cluster" ? 
+        toggleBtn.innerText = "Disable Cluster" 
+        : toggleBtn.innerText = "Enable Cluster"
       })
 
     })

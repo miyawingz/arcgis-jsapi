@@ -1,11 +1,13 @@
 require([
     'esri/Map',
     'esri/views/MapView',
-    'esri/layers/CSVLayer'
+    'esri/layers/CSVLayer',
+    'esri/widgets/LayerList'
 ], function (
     Map,
     MapView,
-    CSVLayer
+    CSVLayer,
+    LayerList
 ) {
     const siteLayer = new CSVLayer({
         url: "http://old.c2rem.com/test/assets/SiteInfo.csv",
@@ -53,17 +55,17 @@ require([
                         {
                             fieldName: "Cost_2020",
                             label: "Cost till 2020 $",
-                            format:{
-                                places:0,
-                                digitSeparator:true
+                            format: {
+                                places: 0,
+                                digitSeparator: true
                             }
                         },
                         {
                             fieldName: "Cost_2050",
                             label: "Cost till 2050 $",
-                            format:{
-                                places:0,
-                                digitSeparator:true
+                            format: {
+                                places: 0,
+                                digitSeparator: true
                             }
                         },
                         {
@@ -124,9 +126,27 @@ require([
         }
     })
 
+    const bundledLayer = new CSVLayer({
+        url: "http://old.c2rem.com/test/assets/RaviProject.csv",
+        title: "Bundled LTC Sites",
+        outFields: ["*"],
+        popupTemplate: {
+            title: "{Site Address}",
+            content: [
+                {
+                    type: "fields",
+                    fieldInfos: [
+                        { fieldName: "Regulatory Oversight Agency" },
+                        { fieldName: "Case Worker" }
+                    ]
+                }
+            ]
+        }
+    })
+
     const map = new Map({
         basemap: "topo",
-        layers: [siteLayer]
+        layers: [siteLayer, bundledLayer]
     })
 
     const view = new MapView({
@@ -136,6 +156,12 @@ require([
         zoom: 11
     })
 
+    view.when(function () {
+        const layerList = new LayerList({
+            view: view
+        })
+        view.ui.add(layerList,"top-right")
+    })
 
 
 })
