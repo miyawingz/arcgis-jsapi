@@ -52,11 +52,19 @@ require([
                         },
                         {
                             fieldName: "Cost_2020",
-                            label: "Cost till 2020"
+                            label: "Cost till 2020 $",
+                            format:{
+                                places:0,
+                                digitSeparator:true
+                            }
                         },
                         {
                             fieldName: "Cost_2050",
-                            label: "Cost till 2050"
+                            label: "Cost till 2050 $",
+                            format:{
+                                places:0,
+                                digitSeparator:true
+                            }
                         },
                         {
                             fieldName: "LeadAgency",
