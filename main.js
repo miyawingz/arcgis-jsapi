@@ -2,12 +2,16 @@ require([
   "esri/Map",
   "esri/views/MapView",
   'esri/layers/CSVLayer',
+  'esri/layers/FeatureLayer',
+  'esri/layers/GeoJSONLayer',
   'esri/widgets/Expand',
   'esri/widgets/Legend'
 ], function (
   Map,
   MapView,
   CSVLayer,
+  FeatureLayer,
+  GeoJSONLayer,
   Expand,
   Legend
 ) {
@@ -156,7 +160,7 @@ require([
   };
 
   const pcroSpend = new CSVLayer({
-    url: "http://old.c2rem.com/test/assets/PCROSpend.csv",
+    url: "https://c2-rem.maps.arcgis.com/sharing/rest/content/items/28519666d9984ec28a62d9a6aeed4e83/data",
     title: "PCRO Project Spend",
     // outFields: ["Name", "SiteID", "Phase", "MultiP", "GeoCode", "PlanetNo", "GSAPID", "SGWPM", "LobSub", "Cost30Yr", "Country", "State"],
     outFields: ["Name", "SiteID", "Phase", "PlanetNo", "SGWPM", "MultiP", "GeoCode", "LobSub", "Cost30Yr", "Country", "State", "GSAPID"],
@@ -291,7 +295,7 @@ require([
       filterCountry.addEventListener("change", event => {
         const newValue = event.target.value;
         const whereClause = newValue ?
-          "Country = '" + newValue + "'"
+          "NAMER = '" + newValue + "'"
           : null;
 
         layerView.filter = {
